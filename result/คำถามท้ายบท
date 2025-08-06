@@ -1,0 +1,55 @@
+1.Docker vs Native Setup: อธิบายข้อดีของการใช้ Docker เปรียบเทียบกับการติดตั้ง ESP-IDF บน host system
+= 1.Dockerไม่ต้องติดตั้ง dependencies เอง เพียงใช้ image ที่มีทุกอย่างพร้อม Native Setupต้องติดตั้ง ESP-IDF, Python, toolchain, และ config environment เอง
+  2.Docker	ย้ายไปเครื่องไหนก็ใช้ได้ทันทีผ่าน Docker image 	Native Setupต้อง setup ใหม่ทีละเครื่อง
+2.Build Process: อธิบายขั้นตอนการ build ของ ESP-IDF ใน Docker container ตั้งแต่ source code จนได้ binary
+= 1.docker-compose up -d
+  2.docker-compose exec esp32-dev bash
+  3.source $IDF_PATH/export.sh
+  4.cd ไปprojectที่เราทำ
+  5.idf.py build
+  6.idf.py qemu 
+3.CMake Files: บทบาทของไฟล์ CMakeLists.txt แต่ละไฟล์คืออะไร และทำงานอย่างไรใน Docker environment?
+= 4.Git Ignore: ไฟล์ .gitignore มีความสำคัญอย่างไรสำหรับ ESP32 project development?
+5.Container Persistence: ข้อมูลใดบ้างที่จะหายไปเมื่อ restart container และข้อมูลใดที่จะอยู่ต่อ?
+= ข้อมูลใน container ข้อมูลหาย
+ไฟล์ใน host ที่ถูก mount (เช่น /project) ไม่หาย
+Environment variable ที่ตั้งไว้ใน container	หาย
+Docker image	ไม่หาย
+Build files (ใน /project/build) ถ้าอยู่ใน volume	ไม่หาย
+Tools ที่ติดตั้งใน container (ระหว่าง runtime เท่านั้น)	หาย
+6.Development Workflow: เปรียบเทียบ workflow การพัฒนาระหว่างการใช้ Docker กับการทำงานบน native system
+= 1. การติดตั้งและตั้งค่าเริ่มต้น
+Docker:
+เพียงแค่ pull Docker image ที่เตรียมไว้ ก็พร้อมใช้งานได้ทันที ไม่ต้องติดตั้ง dependencies เอง
+Native:
+ต้องติดตั้ง ESP-IDF, Python, Toolchain, และตั้งค่า environment ด้วยตนเอง (อาจใช้เวลานาน)
+2. การ build project
+Docker:
+ใช้คำสั่งใน container เช่น idf.py build (หลังจาก source export.sh) โดย project ต้องถูก mount เข้ามาใน container
+Native:
+ใช้ idf.py build ได้ทันทีจาก shell ของระบบปฏิบัติการที่ตั้งค่าไว้แล้ว
+3. การ flash ไปยังบอร์ด
+Docker:
+ต้องระบุพอร์ต USB ผ่าน --device=/dev/ttyUSB0 และต้องแน่ใจว่า container มีสิทธิ์เข้าถึงอุปกรณ์
+Native:
+Flash ได้ทันทีผ่าน serial port โดยตรง ง่ายกว่าในการจัดการพอร์ต
+4. การ debug และ log
+Docker:
+ต้องเข้าผ่าน container หากต้องการดู log หรือ debug ซึ่งอาจซับซ้อนกว่าการรัน native
+Native:
+ใช้เครื่องมือ debug และ serial monitor ได้โดยตรงจากเครื่อง ไม่ต้องผ่าน container
+5. การจัดการ environment
+Docker:
+Environment ถูกกำหนดไว้ใน image ทำให้สามารถควบคุม version และ dependencies ได้ง่าย ไม่ต้องห่วงเรื่อง "มันทำงานบนเครื่องฉันนะ"
+Native:
+เสี่ยงต่อปัญหา dependency mismatch, path conflict หรือ tool เวอร์ชันไม่ตรงกัน
+6. ความสามารถในการแชร์และทำงานร่วมกัน
+Docker:
+แชร์ Dockerfile หรือ image ให้ทีมใช้ environment เดียวกันได้อย่างสะดวก
+Native:
+ต้องเขียนเอกสารการติดตั้ง และแต่ละคนอาจ setup ไม่เหมือนกัน
+7. ความสะอาดของระบบ
+Docker:
+ทุกอย่างรันแยกใน container ไม่ทำให้ host system รก
+Native:
+ไฟล์ต่างๆ เช่น build tools, Python packages จะติดตั้งลงเครื่องโดยตรง
